@@ -7,7 +7,7 @@ sitk.ProcessObject_GetGlobalDefaultNumberOfThreads()
 
 
 class RegistrationToCTTemplate(object):
-    def __init__(self, localisation_dir, target_template_path, num_runs=1, debug_mode=False):
+    def __init__(self, localisation_dir, target_template_path, num_runs=1, debug_mode=True):
         self.target_template_path = target_template_path
         self.target_template = sitk.ReadImage(self.target_template_path)
         self.localisation_dir = localisation_dir
