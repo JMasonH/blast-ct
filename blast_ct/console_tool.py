@@ -29,7 +29,7 @@ def console_tool():
     parser.add_argument('--do-localisation', default=False, action='store_true',
                         help='Whether to run localisation or not')
     parser.add_argument('--save-registered', default=False, action='store_true',
-                    help='Save registered nifti volume and transform to output directory.')
+                    help='Save registered nifti volume and transform to the output directory.')
 
     parse_args, unknown = parser.parse_known_args()
     if not (parse_args.input[-7:] == '.nii.gz' or parse_args.input[-4:] == '.nii'):
@@ -48,8 +48,9 @@ def console_tool():
     job_dir = '/tmp/blast_ct'
     os.makedirs(job_dir, exist_ok=True)
     test_csv_path = os.path.join(job_dir, 'test.csv')
-    pd.DataFrame(data=[['im_0', parse_args.input]], columns=['id', 'image']).to_csv(test_csv_path, index=False)
-
+    image_id = os.path.basename(parse_args.input).replace('.nii.gz', '').replace('.nii', '')
+    pd.DataFrame(data=[[image_id, parse_args.input]], columns=['id', 'image']).to_csv(test_csv_path, index=False)
+    
     model = get_model(config)
     test_loader = get_test_loader(config, model, test_csv_path, use_cuda=not device.type == 'cpu')
 
@@ -67,12 +68,11 @@ def console_tool():
     shutil.copyfile(output_dataframe.loc[0, 'prediction'], parse_args.output)
 
     if parse_args.save_registered:
-    import glob
-    output_dir = os.path.dirname(parse_args.output)
-    os.makedirs(output_dir, exist_ok=True)
-    for f in glob.glob(os.path.join(job_dir, 'predictions/*_resampled.nii.gz')):
-        shutil.copyfile(f, os.path.join(output_dir, os.path.basename(f)))
-    for f in glob.glob(os.path.join(job_dir, 'predictions/*_transform.tfm')):
-        shutil.copyfile(f, os.path.join(output_dir, os.path.basename(f)))
-        
+        import glob
+        output_dir = os.path.dirname(os.path.abspath(parse_args.output))
+        for f in glob.glob(os.path.join(job_dir, 'localisation/*_resampled.nii.gz')):
+            shutil.copyfile(f, os.path.join(output_dir, os.path.basename(f)))
+        for f in glob.glob(os.path.join(job_dir, 'localisation/*_transform.tfm')):
+            shutil.copyfile(f, os.path.join(output_dir, os.path.basename(f)))
+            
     shutil.rmtree(job_dir)
